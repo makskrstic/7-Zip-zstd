@@ -298,7 +298,7 @@ HRESULT CompressFiles(
   }
   
   // for testing current params, /TR 2017-05-18
-  // ErrorMessage(params);
+  ErrorMessage(params);
   return Call7zGui(params,
       // (arcPathPrefix.IsEmpty()? 0: (LPCWSTR)arcPathPrefix),
       waitFinish, &event);

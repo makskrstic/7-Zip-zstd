@@ -17,6 +17,7 @@
 #include "../../../Windows/ProcessUtils.h"
 #include "../../../Windows/Synchronization.h"
 
+#include "../FileManager/StringUtils.h"
 #include "../FileManager/RegistryUtils.h"
 
 #include "ZipRegistry.h"
@@ -229,7 +230,7 @@ HRESULT CompressFiles(
     index = FindRegistryFormatAlways(arcType);
     if (index >= 0)
     {
-      char temp[256];
+      char temp[1024];
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
 
       if (!fo.Method.IsEmpty())
@@ -245,6 +246,22 @@ HRESULT CompressFiles(
         params += temp;
       }
 
+      if (fo.Dictionary)
+      {
+        params += " -md=";
+        ConvertUInt64ToString(fo.Dictionary, temp);
+        params += temp;
+        params += "b";
+      }
+
+      if (fo.BlockLogSize)
+      {
+        params += " -ms=";
+        ConvertUInt64ToString(1 << fo.BlockLogSize, temp);
+        params += temp;
+        params += "b";
+      }
+
       if (fo.NumThreads)
       {
         params += " -mmt=";
@@ -252,20 +269,16 @@ HRESULT CompressFiles(
         params += temp;
       }
 
-#if 0
-      // need to split the extra Options /TR 2020-04-10
       if (!fo.Options.IsEmpty())
       {
-        params += " -m";
-        params += fo.Options;
+        UStringVector strings;
+        SplitString(fo.Options, strings);
+        FOR_VECTOR (i, strings)
+        {
+          params += " -m";
+          params += strings[i];
+        }
       }
-
-      if (!fo.SplitVolume.IsEmpty())
-      {
-        params += " -v";
-        params += fo.SplitVolume;
-      }
-#endif
     }
   }
 
@@ -297,7 +310,6 @@ HRESULT CompressFiles(
     arcName);
   }
   
-  // for testing current params, /TR 2017-05-18
   // ErrorMessage(params);
   return Call7zGui(params,
       // (arcPathPrefix.IsEmpty()? 0: (LPCWSTR)arcPathPrefix),
